@@ -50,26 +50,32 @@ int main(int argc, char** argv) {
 
 
 	while (1){
-
-		line_gap_slider = 1;
+		cout << "\nNEW ITERATION\n";
+		Mat image_copy;
 		src_throught_mask.release();
-		src.copyTo(src_throught_mask);
+		src_throught_mask = src.clone();
+			image_copy.release();
+ 			image_copy = src_throught_mask.clone();
+			cout << "Please define area to process\n";
 		imshow("Please define area to process", src_throught_mask);
-		setMouseCallback("Please define area to process", get_working_area, NULL);
+		setMouseCallback("Please define area to process", get_working_area, NULL); /// move away from while loop
 		waitKey(0);
-		binary_image.release();
-
-		inRange(src_throught_mask, Scalar(80, 80, 70), Scalar(230, 225, 225), binary_image);
+		morphology_operate(src_throught_mask, 3, MORPH_BLACKHAT);		
+		inRange(src_throught_mask, Scalar(10, 10, 10), Scalar(100, 100, 100), binary_image); /// better use OTSU
+			image_copy.release();
+			image_copy = src_throught_mask.clone();
+			image_copy.release();
+			image_copy = binary_image.clone();
 		/// namedWindow("Binary_image");
 		/// imshow("Binary_image", binary_image);
 		/// waitKey(0);
-		morphology_operate(binary_image, 3, MORPH_CLOSE);
+		morphology_operate(binary_image, 3, MORPH_GRADIENT);
+			image_copy.release();
+			image_copy = binary_image.clone();
 		detect_lines(binary_image, line_gap);
-		inpaint(src, binary_image, src, 5, INPAINT_TELEA);
-		imshow("Original_photo", src);
-		
-		/// imshow("Original_photo", src);
+		inpaint(src, binary_image, src, 3, INPAINT_TELEA);		
 		cout << "\nPress enter to finish processing or any other key to proceed\n";
+		imshow("Original_photo", src);
 		int key_pressed = waitKey(0);
 		if (key_pressed == 13){
 			imwrite(src_filename, src);
@@ -104,14 +110,14 @@ void detect_contours(Mat& img) {
 	}
 }
 
-void detect_lines(Mat& img, int line_gap = 15) {
-	std::vector<Vec4i> lines;
-	Mat detected_lines = Mat::zeros(src.rows, src.cols, CV_8UC1);
-	HoughLinesP(img, lines, 3, CV_PI / 180, 50, 300, line_gap);
+void detect_lines(Mat& img, int line_gap = 5) {
+	std::vector<Vec4i> lines(1000); /// reserve memory for 1000 elems to avoid BLOCK_TYPE_IS_VALID error in earlier versions of Visual Studio
+	Mat detected_lines = Mat::zeros(img.rows, img.cols, CV_8UC1);
+	HoughLinesP(img, lines, 3, CV_PI / 180, 50, 30, line_gap);
 	for (size_t i = 0; i < lines.size(); i++)
 	{
 		Vec4i l = lines[i];
-		line(detected_lines, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 255, 255), 5, LINE_AA);
+		line(detected_lines, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 255, 255), 3, LINE_AA);
 	}
 }
 
@@ -139,7 +145,7 @@ void on_morph_size_trackbar(int, void*) {
 }
 
 void get_working_area(int event, int x, int y, int flags, void* userdata) {
-
+	Mat image_copy;
 	if ((!drawNow) && (flags == (EVENT_LBUTTONDOWN)))
 	{
 		cout << "Starting to draw: (" << x << ", " << y << ")" << endl;
@@ -161,14 +167,24 @@ void get_working_area(int event, int x, int y, int flags, void* userdata) {
 		cout << "READY TO DRAW CONTOUR";
 		drawNow = false;
 		Mat workingAreaMask = Mat::zeros(src.size(), CV_8UC1);
+		if (points.size() < 10){
+			binary_image.release();
+			workingAreaMask.release();
+			return;
+		}
 		for (int i = 0; i < points.size(); i++)
 		{
 			drawContours(workingAreaMask, points, i, 255, CV_FILLED);
 		}
 		cvtColor(workingAreaMask, workingAreaMask, CV_GRAY2BGR);
-		/// imshow("Mask image", workingAreaMask);
+			image_copy.release();
+			workingAreaMask.copyTo(image_copy);
 		src_throught_mask.release();
 		src.copyTo(src_throught_mask, workingAreaMask);
-		/// imshow("With_mask", src_throught_mask);
+			image_copy.release();
+			src_throught_mask.copyTo(image_copy);
+
+			workingAreaMask.release();
+			points.erase(points.begin(), points.end());
 	}
 }
