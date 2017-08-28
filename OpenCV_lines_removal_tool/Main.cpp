@@ -12,10 +12,12 @@ int line_gap;
 int operation_size;
 int operation_type; /// {type is valid 3 - 7} => change to enum
 Mat src, src_throught_mask;;
-Mat binary_image;
+Mat final_mask;
 Point start_point, finish_point;
-vector<vector<Point>> points(1000);
+vector<vector<Point>> points(1);
 bool drawNow = false;
+bool empty_mask = false;
+String src_filename;
 
 void morphology_operate(Mat& img, int oprt_size, int oprtn_type);
 void detect_contours(Mat& img);
@@ -27,7 +29,11 @@ void get_working_area(int event, int x, int y, int flags, void* userdata);
 
 
 int main(int argc, char** argv) {
-	String src_filename = "images/img2";
+
+	if (argc == 2)
+		src_filename = argv[1];
+	else
+		src_filename = "/15";
 
 	src = imread(src_filename + ".jpg", IMREAD_COLOR);
 	if (src.empty()) {
@@ -41,51 +47,51 @@ int main(int argc, char** argv) {
 	waitKey(0);
 
 	createTrackbar("Processing depth", "Original_photo", &line_gap_slider, 10, on_lines_trackbar);
-	/// createTrackbar("Morph. size", "Binary_image", &operation_size_slider, 20, on_morph_size_trackbar);
+	/// createTrackbar("Morph. size", "final_mask", &operation_size_slider, 20, on_morph_size_trackbar);
 
 	/// on_lines_trackbar(line_gap_slider, 0);
 	/// on_morph_size_trackbar(operation_size_slider, 0);
 
 	namedWindow("Please define area to process", WINDOW_NORMAL);
+	setMouseCallback("Please define area to process", get_working_area, NULL);
+	
 
-
-	while (1){
+	while (1) {
 		cout << "\nNEW ITERATION\n";
-		Mat image_copy;
 		src_throught_mask.release();
 		src_throught_mask = src.clone();
-			image_copy.release();
- 			image_copy = src_throught_mask.clone();
-			cout << "Please define area to process\n";
+		cout << "Please define area to process\n";
 		imshow("Please define area to process", src_throught_mask);
-		setMouseCallback("Please define area to process", get_working_area, NULL); /// move away from while loop
-		waitKey(0);
-		morphology_operate(src_throught_mask, 3, MORPH_BLACKHAT);		
-		inRange(src_throught_mask, Scalar(10, 10, 10), Scalar(100, 100, 100), binary_image); /// better use OTSU
-			image_copy.release();
-			image_copy = src_throught_mask.clone();
-			image_copy.release();
-			image_copy = binary_image.clone();
-		/// namedWindow("Binary_image");
-		/// imshow("Binary_image", binary_image);
-		/// waitKey(0);
-		morphology_operate(binary_image, 3, MORPH_GRADIENT);
-			image_copy.release();
-			image_copy = binary_image.clone();
-		detect_lines(binary_image, line_gap);
-		inpaint(src, binary_image, src, 3, INPAINT_TELEA);		
-		cout << "\nPress enter to finish processing or any other key to proceed\n";
-		imshow("Original_photo", src);
 		int key_pressed = waitKey(0);
-		if (key_pressed == 13){
-			imwrite(src_filename, src);
+		if (key_pressed == 13) { /// ENTER PRESSED
+			imwrite(src_filename + "_.jpg", src);
 			break;
 		}
-		else if (key_pressed == 10){
+		else if (key_pressed == 27) { /// ESC PRESSED
 			break;
 		}
+		if (!empty_mask){			
+			morphology_operate(src_throught_mask, 3, MORPH_BLACKHAT);
+			inRange(src_throught_mask, Scalar(10, 10, 10), Scalar(100, 100, 100), final_mask); /// better to use OTSU
+			morphology_operate(final_mask, 2, MORPH_GRADIENT);
+			detect_lines(final_mask, line_gap);
+
+			inpaint(src, final_mask, src, 3, INPAINT_TELEA);
+
+			cout << "\nPress enter to finish processing, esc to EXIT or any other key to proceed\n";
+			imshow("Original_photo", src);
+			key_pressed = waitKey(0);
+			if (key_pressed == 13) { /// ENTER PRESSED
+				imwrite(src_filename + "_.jpg", src);
+				break;
+			}
+			else if (key_pressed == 27) { /// ESC PRESSED
+				break;
+			}
+		}
+		empty_mask = false;
 	} /// end of WHILE loop
-	cout << "Exiting program\n";	
+	cout << "Exiting program\n";
 	return 0;
 }
 
@@ -124,10 +130,10 @@ void detect_lines(Mat& img, int line_gap = 5) {
 void on_lines_trackbar(int, void*) {
 
 	line_gap = line_gap_slider;
-	/// morphology_operate(binary_image, 3);
-	/// detect_lines(binary_image, line_gap);
-	/// inpaint(src, binary_image, src, 5, INPAINT_TELEA);
-	/// imshow("Original_photo", src);
+	morphology_operate(final_mask, 3);
+	detect_lines(final_mask, line_gap);
+	inpaint(src, final_mask, src, 5, INPAINT_TELEA);
+	imshow("Original_photo", src);
 }
 
 void on_morph_opration_trackbar() {
@@ -137,10 +143,10 @@ void on_morph_opration_trackbar() {
 void on_morph_size_trackbar(int, void*) {
 	operation_size = operation_size_slider;
 	cout << "operation size = " << operation_size << '\n';
-	morphology_operate(binary_image, operation_size_slider, 4);
-	detect_contours(binary_image);
-	///	inpaint(src, binary_image, src, 5, INPAINT_TELEA);
-	imshow("Binary_image", binary_image);
+	morphology_operate(final_mask, operation_size_slider, 4);
+	detect_contours(final_mask);
+	///	inpaint(src, final_mask, src, 5, INPAINT_TELEA);
+	imshow("Mask_image", final_mask);
 	imshow("Original_photo", src);
 }
 
@@ -167,10 +173,9 @@ void get_working_area(int event, int x, int y, int flags, void* userdata) {
 		cout << "READY TO DRAW CONTOUR";
 		drawNow = false;
 		Mat workingAreaMask = Mat::zeros(src.size(), CV_8UC1);
-		if (points.size() < 10){
-			binary_image.release();
-			workingAreaMask.release();
-			return;
+		final_mask = Mat::zeros(final_mask.size(), CV_8UC1);
+ 		if (points.at(0).size() < 1) {
+			empty_mask = true;
 		}
 		for (int i = 0; i < points.size(); i++)
 		{
@@ -184,7 +189,9 @@ void get_working_area(int event, int x, int y, int flags, void* userdata) {
 			image_copy.release();
 			src_throught_mask.copyTo(image_copy);
 
-			workingAreaMask.release();
-			points.erase(points.begin(), points.end());
+		workingAreaMask.release();
+		points.erase(points.begin()+1, points.end());
+		points.clear();
+		points.resize(1);
 	}
 }
