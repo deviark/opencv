@@ -1,0 +1,48 @@
+=========FIRST=========
+Find pixels of defined color
+
+Hought line detector 
+
+INTERPOLATE PIXELS OVER DETECTED LINES (USE RoiFill)
+
+
+=========SECOND=========
+ASK USER TO DEFINE A REGION FOR SEARCH
+
+DETECT A CONTOURS OVER SELECTED AREA (MAYBE IF AREA IS LESS THAN DEFINED CONST)
+
+INTERPOLATE PIXELS OVER DETECTED LINES (USE RoiFill) WITH DIFFENT LAST ARGUMENT
+UNTIL USER IS SATISFIED
+
+=========THIRD=========
+STORE FOUND LINES WITH HOUGHT IN BINARY Mat 
+
+USE DILATION AND FINDING BIG ANOUGHT CONTOURS FOR CREATING A MASK
+(http://opencvexamples.blogspot.com/2013/09/find-contour.html)
+
+DELETE FALSE LINES WITH CREATED MASK
+
+RUN A HOUGHT OVER A Mat WITH FILTERED LINES
+
+INTERPOLATE PIXELS OVER DETECTED LINES
+
+=========FOURTH=========
+FIND LINES USING HOUGHT
+
+FOR LINES DETECTED DETERMINE "K"(y=k*x+b) AND USING KNN COMPARE "K" AND DELETE 
+FROM VECTOR THOSE WHOSE "K" DIVERSE MORE THAN EPS
+
+INTERPOLATE PIXELS OVER OTHERS LINES
+
+=========FIFTH=========
+Hought line detector with gib enought (variable) last parametr
+
+find interceptions of lines, if line has more than two -> ignore line
+
+INTERPOLATE PIXELS OVER DETECTED LINES (USE RoiFill)
+
+
+=========FIGURES DETECTION=========
+http://opencv-srf.blogspot.com/2011/09/object-detection-tracking-using-contours.html
+find nuber of corners (if 3; if 4 etc.)
+else run Hought circle detector with iteration of radiuces
