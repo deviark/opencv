@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿Build started 25.08.2017 11:20:16.
      1>Project "H:\HOMEdisk\Books\Codes\OpenCV\opencv_lines_removal_tool\opencv_lines_removal_tool\OpenCV_lines_removal_tool\OpenCV_lines_removal_tool.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
@@ -11,3 +12,8 @@
 Build succeeded.
 
 Time Elapsed 00:00:01.23
+=======
+﻿  Main.cpp
+  LINK : D:\Books\Codes\OpenCV\Git\opencv_lines_removal_tool\OpenCV_lines_removal_tool\x64\Debug\OpenCV_lines_removal_tool.exe not found or not built by the last incremental link; performing full link
+  OpenCV_lines_removal_tool.vcxproj -> D:\Books\Codes\OpenCV\Git\opencv_lines_removal_tool\OpenCV_lines_removal_tool\x64\Debug\OpenCV_lines_removal_tool.exe
+>>>>>>> f06b2349c6492b2e7dbdaeb87c2a4029ea586194
